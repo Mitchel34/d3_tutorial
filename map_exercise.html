@@ -1,50 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Map</title>
-    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Map</title>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <style>
+    /* Tooltip styling for county name */
+    #tooltip {
+      position: absolute;
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      padding: 5px;
+      font-size: 14px;
+      visibility: hidden;
+      pointer-events: none;
+    }
+  </style>
 </head>
 <body>
-    
+  <!-- tooltip element for county name -->
+  <div id="tooltip"></div>
 </body>
 <script>
-    const width = 1000;
-    const height = 1000;
+  const width = 1000;
+  const height = 1000;
 
-    // create svg
-    const svg = d3.select('body')
-        .append('svg')
-        .attr('width', width)
-        .attr('height', height);
+  // create svg
+  const svg = d3.select('body')
+      .append('svg')
+      .attr('width', width)
+      .attr('height', height);
 
-    // load data
-    d3.json('https://gist.githubusercontent.com/sdwfrost/d1c73f91dd9d175998ed166eb216994a/raw/e89c35f308cee7e2e5a784e1d3afc5d449e9e4bb/counties.geojson')
-    .then(geo=>{
-        // go to the console to see the structure of the data
-        console.log(geo);
+  // load data
+  d3.json('https://gist.githubusercontent.com/sdwfrost/d1c73f91dd9d175998ed166eb216994a/raw/e89c35f308cee7e2e5a784e1d3afc5d449e9e4bb/counties.geojson')
+    .then(geo => {
+      // go to the console to see the structure of the data
+      console.log(geo);
 
-        // filter the data to only include North Carolina
-        const ncData = geo.features.filter(feature => feature.properties.STATEFP === "37");
+      // filter the data to only include North Carolina
+      const ncData = geo.features.filter(feature => feature.properties.STATEFP === "37");
+      console.log(ncData);
 
-
-        // create a projection
-        const projection = d3.geoAlbersUsa()
+      // create a projection
+      // geoMercator() cylinder projection, geoAlbersUsa() conic projection
+      const projection = d3.geoMercator()
         .fitSize([width, height], { type: "FeatureCollection", features: ncData });
 
-        // define the geoPath function, which is used to generate the path data for counties
-        const path = d3.geoPath().projection(projection);
+      // define the geoPath function, which is used to generate the path data for counties
+      const path = d3.geoPath().projection(projection);
 
-        // draw the map, with tooltips for each county
-        svg.selectAll('path')
+      // draw the map, with tooltips for each county
+      svg.selectAll('path')
         .data(ncData)
         .join('path')
         .attr('d', path)
         .attr('stroke', 'black')
         .attr('fill', 'lightblue')
-        .append("title")
-        .text(d => d.properties.NAME);
+        .on("mouseover", function(event, d) {
+            d3.select(this).attr('fill', 'red'); // Change fill to red on hover.
+            d3.select("#tooltip")
+              .style("visibility", "visible")
+              .text(d.properties.NAME); // Show the county name.
+          })
+          .on("mousemove", function(event, d) {
+            d3.select("#tooltip")
+              .style("top", (event.pageY - 10) + "px")
+              .style("left", (event.pageX + 10) + "px");
+          })
+          .on("mouseout", function(event, d) {
+            d3.select(this).attr('fill', 'lightblue'); // Revert fill color.
+            d3.select("#tooltip").style("visibility", "hidden");
+          });
     })
+    .catch(error => console.error("Error loading GeoJSON data:", error));
 </script>
 </html>
