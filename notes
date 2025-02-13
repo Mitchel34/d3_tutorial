@@ -1,0 +1,6 @@
+BTC live tracking using html, javascript, and D3
+
+The btc live tracking link that works
+
+var url = "https://min-api.cryptocompare.com/data/histoday?fsym=BTC&tsym=USD&limit=200&aggregate=3&e=CCCAGG";
+
